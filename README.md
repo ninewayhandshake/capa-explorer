@@ -1,5 +1,22 @@
 # capa-explorer
 
+Capa explorer for Cutter.
+
+The goal of this is to port the functionality of the [capa IDA plugin](https://github.com/fireeye/capa/tree/master/capa/ida/plugin) to Cutter. 
+
+## Features
+
+- Display capa results in an interactive tree view of rule matches and their locations in the current database
+- Search for keywords or phrases found in the Rule Information, Address, or Details columns
+- Display rule source content when a user hovers their cursor over a rule match
+- Double-click Address column to view associated feature in the Cutter Disassembly view
+- Limit tree view results to the function currently displayed in the Cutter Disassembly view; update results as a user navigates to different functions
+- Automatically update results when Cutter is used to rename a function
+- Select one or more checkboxes to highlight the associated addresses in the Cutter Disassembly view
+- Right-click a function match to rename it; the new function name is propagated to Cutter
+- Right-click to copy a result by column or by row
+- Sort results by column
+
 ![](img/plugin_interface_example_1.png)
 
 ## Installation
