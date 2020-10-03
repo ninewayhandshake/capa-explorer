@@ -43,6 +43,8 @@ Open the binary in Cutter and and press "Load capa JSON" button in the capa expl
 ## Known limitations
 - The plugin currently uses r2's ecH command to highlight instructions, while this works the support seems limited in Cutter and at times it can be slow. Ideally BIHighlighter should be used but due to a bug this is currently not exposed in CutterCore. https://github.com/radareorg/cutter/issues/2395
 - The main difference between this plugin and the IDA version is that this plugin does not implement a feature extractor and relies on th JSON exports from the IDA plugin or the standalone tool. I have not looked into the possibility of implementing feature extraction with radare2. This may or may not be something I do in the future.  
+- The plugin has been developed for Cutter version 1.12 and Ive experienced crashes with earlier versions so make sure to check the version you are running if you are experiencing issues.
+- This is my first attempt at a Cutter plugin so there are very likely bugs.
 
 ## Credits
 I want to thank FireEye and the FLARE team for creating this tool and making it availible to everyone. Most of the code in this repo is taken directly from the official capa IDA plugin and and have received slight modifications to make it work in Cutter. The main goal was to make the user experice as close as possible to the original plugin.
