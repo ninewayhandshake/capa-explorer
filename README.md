@@ -31,7 +31,3 @@ Open the binary in Cutter and and press "Load capa JSON" button in the capa expl
 I want to thank FireEye and the FLARE team for creating this tool and making it availible to everyone. Most of the code in this repo is taken directly from the official capa IDA plugin and and have received slight modifications to make it work in Cutter. The main goal was to make the user experice as close as possible to the original plugin.
 
 https://github.com/fireeye/capa
-
-Also a big thanks to the creators of radare2 and Cutter.
-
-https://github.com/radareorg/cutter
