@@ -1,6 +1,6 @@
-# capa-explorer for Cutter
-capa explorer for Cutter.
+# capa-explorer
 
+![](img/plugin_interface_example_1.png)
 
 ## Installation
 
