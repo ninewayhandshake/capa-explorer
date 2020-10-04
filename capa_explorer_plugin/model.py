@@ -297,7 +297,6 @@ class CapaExplorerDataModel(QtCore.QAbstractItemModel):
             role == QtCore.Qt.CheckStateRole
             and model_index.column() == CapaExplorerDataModel.COLUMN_INDEX_RULE_INFORMATION
         ):
-            util.log('Toggle Checking')
             # user un/checked box - un/check parent and children
             locations = []
             checkval = None
@@ -605,7 +604,7 @@ class CapaExplorerDataModel(QtCore.QAbstractItemModel):
         """
         # create empty root index for search
         root_index = self.index(0, 0, QtCore.QModelIndex())
-        util.log('so far so good')
+ 
         # recursive search for all instances of old function name
 
         for idx in range(self.root_node.childCount()):
@@ -615,12 +614,4 @@ class CapaExplorerDataModel(QtCore.QAbstractItemModel):
                     continue
                 model_index.internalPointer().info = util.get_name(model_index.internalPointer().location)
                 self.dataChanged.emit(model_index, model_index)
-
-        #for model_index in self.iterateChildrenIndexFromRootIndex(root_index, ignore_root=False):
-        #   
-            
-        #    #
-        #    #util.log(util.get_name(model_index.internalPointer().location))
-        #    # replace old function name with new function name and emit change
-        #    #model_index.internalPointer().info = util.get_name(model_index.internalPointer().location)
         
