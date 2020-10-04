@@ -200,13 +200,21 @@ class MyDockWidget(cutter.CutterDockWidget):
         if checked, configure function filter if screen location is located in function, otherwise clear filter
         @param state: checked state
         """
+        invoke_reset = True
+
         if state == Qt.Checked:
             minbound,maxbound = util.get_function_boundries_at_current_location()
+
+            if self.range_model_proxy.min_ea == minbound and self.range_model_proxy.max_ea == maxbound:
+                # Seek only changed within current function, avoid resetting tree
+                invoke_reset = False
+
             self.limit_results_to_function((minbound,maxbound))
         else:
             self.range_model_proxy.reset_address_range_filter()
 
-        self.view_tree.reset_ui()
+        if invoke_reset:
+            self.view_tree.reset_ui()
 
     def limit_results_to_function(self, f):
         """add filter to limit results to current function
