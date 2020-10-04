@@ -48,7 +48,7 @@ Open the binary in Cutter and and press "Load capa JSON" button in the capa expl
 - This plugin does not currently handle rebasing, thats on the todo list.
 
 ## Other issues
-If you encounter bugs or have suggestions which are not among the known limitations please create and an issue, or even better, a pull request.
+If you encounter bugs or have suggestions which are not among the known limitations please create an issue, or even better, a pull request.
 
 ## Credits
 I want to thank FireEye and the FLARE team for creating capa and making it availible to everyone. Most of the code in this repo is taken directly from the official capa IDA plugin and and have received slight modifications to make it work in Cutter. The main goal was to make the user experice as close as possible to the original plugin.
