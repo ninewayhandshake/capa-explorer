@@ -60,7 +60,14 @@ class MyDockWidget(cutter.CutterDockWidget):
         self.btn_load_capa_results.clicked.connect(self.load_file)
 
         self.tabs.setCornerWidget(self.btn_load_capa_results)
-    
+
+        # Add load button
+        self.btn_rename_functions = QPushButton()
+        self.btn_rename_functions.setText("Rename Functions")
+        self.btn_rename_functions.setStyleSheet("margin-bottom: 2px;margin-left:2px");
+        self.btn_rename_functions.clicked.connect(self.rename_functions)
+
+        self.tabs.setCornerWidget(self.btn_rename_functions,corner=Qt.TopLeftCorner) 
     def create_tree_tab_ui(self):
         self.capa_tree_view_layout = QVBoxLayout()
         self.capa_tree_view_layout.setAlignment(Qt.AlignTop)
@@ -235,6 +242,11 @@ class MyDockWidget(cutter.CutterDockWidget):
         """
         cutter.message(f"[CAPAExplorer]: {msg}")
 
+    def rename_functions(self):
+        self.btn_rename_functions.setEnabled(False)
+        self.model_data.renameFunctions()
+        self.btn_rename_functions.setEnabled(True)
+
     def load_file(self):
 
         # Disable load button during loading
@@ -283,3 +295,4 @@ class CAPAExplorerPlugin(cutter.CutterPlugin):
 
 def create_cutter_plugin():
     return CAPAExplorerPlugin()
+

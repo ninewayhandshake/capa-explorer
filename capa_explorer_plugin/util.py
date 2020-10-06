@@ -26,7 +26,20 @@ def rename_function(location, new_name):
         cutter.core().renameFunction(location, new_name)
     except Exception as e:
         log(str(e))
+
+def analyze_and_rename_function(location, name):
+    cutter.cmd('af @ %s' % str(hex(location)))
+    old_name = cutter.cmdj('afij @%s' % location)[0]['name']
+    if ('fcn.' in old_name):
+        rename_function(location, name)
+    else: 
+        rename_function(location, f'{old_name}_AND_{name}')
     
+def create_flagspace(flagspace):
+    cutter.cmd('fs %s' % flagspace)
+
+def create_flag(name, location):
+    cutter.cmd('f+%s @ %s' % (name, location))
 
 def highlight_locations(locations):
     cutter.cmd('ecHi red @@=%s' % ' '.join([str(x) for x in locations])) 

@@ -274,6 +274,41 @@ class CapaExplorerDataModel(QtCore.QAbstractItemModel):
                 # reset highlight to previous
              #   idc.set_color(item.location, idc.CIC_ITEM, item.ida_highlight)
 
+    def renameFunctions(self):
+        # create empty root index for search
+        root_index = self.index(0, 0, QtCore.QModelIndex())
+        name = ""
+        match_number = 0
+        # recursively iterate through rules
+        for idx in range(self.root_node.childCount()):
+            root_index = self.index(idx, 0, QtCore.QModelIndex())
+            for model_index in self.iterateChildrenIndexFromRootIndex(root_index, ignore_root=False):
+                # skip useless rules
+                if not (isinstance(model_index.internalPointer(), CapaExplorerFunctionItem) 
+                    or isinstance(model_index.internalPointer(), CapaExplorerRuleItem)):
+                    continue
+                if isinstance(model_index.internalPointer(), CapaExplorerRuleItem):
+                    match_number = 0
+                    name = model_index.internalPointer().info.replace(' ', '_')
+
+                    # create top-level flagspace for capability
+                    # flag-spaces are useful because the same function may have multiple flags
+                    flagspace = model_index.internalPointer().details.split('/')[0]
+                    util.create_flagspace(flagspace)
+
+                    # normalize by removing match count
+                    if "matches" in name:
+                        name = name.split("(")[0][:-1]
+
+                # since model is tree all functions following name selection belong to name function
+                if isinstance(model_index.internalPointer(), CapaExplorerFunctionItem):
+                    loc = model_index.internalPointer().location
+                    util.create_flag(f"{flagspace}.{name}_{match_number}", str(hex(loc)))
+                    util.analyze_and_rename_function(loc, f"{name}{match_number}")
+                    match_number += 1
+
+        # set flagspace selection to all and refresh
+        util.create_flagspace("*")
 
     def setData(self, model_index, value, role):
         """set data at index by role
