@@ -9,12 +9,13 @@ import sys, os
 from .model import CapaExplorerDataModel
 from .view import CapaExplorerQtreeView
 from .proxy import CapaExplorerRangeProxyModel, CapaExplorerSearchProxyModel
+
 from PySide2.QtCore import SIGNAL, QObject, Qt
-from PySide2.QtGui import QKeySequence, QFont, QColor
-from PySide2.QtWidgets import (QAction, QGroupBox, QHBoxLayout, QLabel, QCheckBox,
-                               QLineEdit, QMessageBox, QPushButton, QShortcut, QFrame,
-                               QTabWidget, QTextEdit, QVBoxLayout, QWidget, QTreeView,
-                               QPlainTextEdit, QFileDialog, QTreeWidget, QTreeWidgetItem, QTableWidget, QAbstractItemView, QTableWidgetItem, QHeaderView)
+from PySide2.QtGui import QFont
+from PySide2.QtWidgets import (QAction, QGroupBox, QHBoxLayout, QLabel, QCheckBox, QToolButton,
+                               QLineEdit, QMessageBox, QTabWidget, QVBoxLayout, QWidget, QTreeView, QMenu,
+                               QFileDialog, QMessageBox, QTreeWidget, QTableWidget, QAbstractItemView, 
+                               QTableWidgetItem, QHeaderView)
 
 
 class MyDockWidget(cutter.CutterDockWidget):
@@ -22,7 +23,7 @@ class MyDockWidget(cutter.CutterDockWidget):
         super(MyDockWidget, self).__init__(parent, action)
         self.setObjectName("Capa explorer")
         self.setWindowTitle("Capa explorer")
-                    
+        
         self._config = CutterBindings.Configuration.instance()
         self.model_data = CapaExplorerDataModel()
 
@@ -32,6 +33,7 @@ class MyDockWidget(cutter.CutterDockWidget):
         self.search_model_proxy.setSourceModel(self.range_model_proxy)
 
         self.create_view_tabs()
+        self.create_menu()
         self.create_tree_tab_ui()
         self.create_view_attack()
 
@@ -39,7 +41,6 @@ class MyDockWidget(cutter.CutterDockWidget):
         self.setWidget(self.tabs)
         self.show()
         
-    
     def create_view_tabs(self):
 
         # Create tabs container
@@ -51,23 +52,51 @@ class MyDockWidget(cutter.CutterDockWidget):
 
         self.tabs.addTab(self.tab_tree_w_model, "Tree View")
         self.tabs.addTab(self.tab_attack, "MITRE")
-        
+ 
+    def create_menu(self):
+        # Define menu actions
+        # Text, tooltip, function, enabled before file load
+        self.disabled_menu_items = []
 
-        # Add load button
-        self.btn_load_capa_results = QPushButton()
-        self.btn_load_capa_results.setText("Load capa JSON")
-        self.btn_load_capa_results.setStyleSheet("margin-bottom: 2px;margin-right:2px");
-        self.btn_load_capa_results.clicked.connect(self.load_file)
+        menu_actions = [
+            ("Load JSON file", '', self.cma_load_file, True),
+            (),
+            ("Auto rename functions", 'Auto renames functions according to capa detections, can result in very long function names.', self.cma_analyze_and_rename, False),
+            ("Create flags", 'Creates flagspaces and flags from capa detections.', self.cma_create_flags, False),
+            (),
+            ("About", '', self.cma_display_about, True),
+        ]
 
-        self.tabs.setCornerWidget(self.btn_load_capa_results)
+        self.capa_menu = QMenu()
+        self.capa_menu.setToolTipsVisible(True)
 
-        # Add load button
-        self.btn_rename_functions = QPushButton()
-        self.btn_rename_functions.setText("Rename Functions")
-        self.btn_rename_functions.setStyleSheet("margin-bottom: 2px;margin-left:2px");
-        self.btn_rename_functions.clicked.connect(self.rename_functions)
+        # Create qactions
+        for action in menu_actions:
+            if not len(action):
+                # Create separator on empty
+                self.capa_menu.addSeparator()
+                continue
 
-        self.tabs.setCornerWidget(self.btn_rename_functions,corner=Qt.TopLeftCorner) 
+            a = QAction(self)
+            a.setText(action[0])
+            a.setToolTip(action[1])
+            a.triggered.connect(action[2])
+            a.setEnabled(action[3])
+            if not action[3]:
+                self.disabled_menu_items.append(a)
+            self.capa_menu.addAction(a)
+
+            # Create menu button
+            font = QFont()
+            font.setBold(True)
+            self.btn_menu = QToolButton()
+            self.btn_menu.setText('...')
+            self.btn_menu.setFont(font)
+            self.btn_menu.setPopupMode(QToolButton.InstantPopup)
+            self.btn_menu.setMenu(self.capa_menu)
+            self.btn_menu.setStyleSheet('QToolButton::menu-indicator { image: none; }')
+            self.tabs.setCornerWidget(self.btn_menu,corner=Qt.TopRightCorner) 
+
     def create_tree_tab_ui(self):
         self.capa_tree_view_layout = QVBoxLayout()
         self.capa_tree_view_layout.setAlignment(Qt.AlignTop)
@@ -190,7 +219,12 @@ class MyDockWidget(cutter.CutterDockWidget):
 
         for (row, value) in enumerate(column_two):
             self.attack_table.setItem(row, 1, QTableWidgetItem(value))
-    
+
+    def enable_menu_items_after_load(self):
+        # enables menu actions after file is loaded
+        for action in self.disabled_menu_items:
+            action.setEnabled(True)  
+            
     def slot_limit_results_to_search(self, text):
         """limit tree view results to search matches
         reset view after filter to maintain level 1 expansion
@@ -235,28 +269,66 @@ class MyDockWidget(cutter.CutterDockWidget):
             # if function not exists don't display any results (assume address never -1)
             self.range_model_proxy.add_address_range_filter(-1, -1)
 
-    def log(self, msg):
-        """log to cutter console
+    # --- Menu Actions
 
-        @param msg: message to log
-        """
-        cutter.message(f"[CAPAExplorer]: {msg}")
+    def cma_analyze_and_rename(self):
+        message_box = QMessageBox()
 
-    def rename_functions(self):
-        self.btn_rename_functions.setEnabled(False)
-        self.model_data.renameFunctions()
-        self.btn_rename_functions.setEnabled(True)
+        message_box.setStyleSheet("QLabel{min-width: 370px;}");
+        message_box.setStandardButtons(QMessageBox.Cancel | QMessageBox.Ok)
+        message_box.setEscapeButton(QMessageBox.Cancel)
+        message_box.setDefaultButton(QMessageBox.Ok)
 
-    def load_file(self):
+        message_box.setWindowTitle('Warning')
+        message_box.setText('Depending on the size of the binary and the'' amount of \n'
+                            'capa matches this feature can take some time to \n'
+                            'complete and might make the UI freeze temporarily.')
+        message_box.setInformativeText('Are you sure you want to proceed ?')
 
-        # Disable load button during loading
-        self.btn_load_capa_results.setEnabled(False)
-      
+        ret = message_box.exec_()
+
+        # Ok = 1024
+        if ret == 1024:
+            self.model_data.auto_rename_functions()
+    
+    def cma_create_flags(self):
+        self.model_data.create_flags()
+
+    def cma_display_about(self):
+        c = CAPAExplorerPlugin()
+
+        info_text = (
+            "{description}\n\n"
+            "https://github.com/ninewayhandshake/capa-explorer\n\n"
+            "Version: {version}\n"
+            "Author: {author}\n"
+            "License: Apache License 2.0\n"
+        ).format(
+            version = c.version,
+            author = c.author,
+            description = c.description,
+            )
+
+        text = CAPAExplorerPlugin().name
+        message_box = QMessageBox()
+        message_box.setStyleSheet("QLabel{min-width: 370px;}");
+        
+        message_box.setWindowTitle('About')
+        message_box.setText(text)
+        message_box.setInformativeText(info_text)
+        message_box.setStandardButtons(QMessageBox.Close)
+
+        for i in message_box.findChildren(QLabel):
+            i.setFocusPolicy(Qt.NoFocus)
+
+        message_box.exec_()
+
+    def cma_load_file(self):
+    
         filename = QFileDialog.getOpenFileName()
         path = filename[0]
 
         if len(path):
-
             try:
                 data = util.load_capa_json(path)
 
@@ -268,18 +340,18 @@ class MyDockWidget(cutter.CutterDockWidget):
                 self.view_tree.header().setStretchLastSection(False)
                 
                 self.view_tree.slot_resize_columns_to_content()
+                self.enable_menu_items_after_load()
             except Exception as e:
                 util.log('Could not load json file.')
         else:
             util.log('No file selected.')
 
-        self.btn_load_capa_results.setEnabled(True)
-
 class CAPAExplorerPlugin(cutter.CutterPlugin):
     name = "Capa explorer"
     description = "Lets you import and explore capa results in Cutter."
-    version = "1.0"
+    version = "1.1"
     author = "@9wayhandshake"
+    license = "Apache License 2.0"
 
     def setupPlugin(self):
         pass
@@ -294,5 +366,9 @@ class CAPAExplorerPlugin(cutter.CutterPlugin):
         pass
 
 def create_cutter_plugin():
-    return CAPAExplorerPlugin()
+    try:
+        return CAPAExplorerPlugin()
+    except Exception as e:
+        cutter.message(str(e))
+    
 
