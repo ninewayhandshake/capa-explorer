@@ -1,5 +1,6 @@
-from collections import deque
+from collections import deque, defaultdict
 from PySide2 import QtGui, QtCore
+import re
 
 from .item import (
     CapaExplorerDataItem,
@@ -254,61 +255,6 @@ class CapaExplorerDataModel(QtCore.QAbstractItemModel):
         ):
             # ignore other item types
             return
-
-        #curr_highlight = idc.get_color(item.location, idc.CIC_ITEM)
-
-        if checked:
-            pass
-            #util.unhighlight_instruction(item.location)
-            # item checked - record current highlight and set to new
-            #item.ida_highlight = curr_highlight
-            #idc.set_color(item.location, idc.CIC_ITEM, DEFAULT_HIGHLIGHT)
-        else:
-            pass
-            #util.highlight_instruction(item.location)
-            # item unchecked - reset highlight
-            #if curr_highlight != DEFAULT_HIGHLIGHT:
-                # user modified highlight - record new highlight and do not modify
-            # #   item.ida_highlight = curr_highlight
-            #else:
-                # reset highlight to previous
-             #   idc.set_color(item.location, idc.CIC_ITEM, item.ida_highlight)
-
-    def renameFunctions(self):
-        # create empty root index for search
-        root_index = self.index(0, 0, QtCore.QModelIndex())
-        name = ""
-        match_number = 0
-        # recursively iterate through rules
-        for idx in range(self.root_node.childCount()):
-            root_index = self.index(idx, 0, QtCore.QModelIndex())
-            for model_index in self.iterateChildrenIndexFromRootIndex(root_index, ignore_root=False):
-                # skip useless rules
-                if not (isinstance(model_index.internalPointer(), CapaExplorerFunctionItem) 
-                    or isinstance(model_index.internalPointer(), CapaExplorerRuleItem)):
-                    continue
-                if isinstance(model_index.internalPointer(), CapaExplorerRuleItem):
-                    match_number = 0
-                    name = model_index.internalPointer().info.replace(' ', '_')
-
-                    # create top-level flagspace for capability
-                    # flag-spaces are useful because the same function may have multiple flags
-                    flagspace = model_index.internalPointer().details.split('/')[0]
-                    util.create_flagspace(flagspace)
-
-                    # normalize by removing match count
-                    if "matches" in name:
-                        name = name.split("(")[0][:-1]
-
-                # since model is tree all functions following name selection belong to name function
-                if isinstance(model_index.internalPointer(), CapaExplorerFunctionItem):
-                    loc = model_index.internalPointer().location
-                    util.create_flag(f"{flagspace}.{name}_{match_number}", str(hex(loc)))
-                    util.analyze_and_rename_function(loc, f"{name}{match_number}")
-                    match_number += 1
-
-        # set flagspace selection to all and refresh
-        util.create_flagspace("*")
 
     def setData(self, model_index, value, role):
         """set data at index by role
@@ -641,4 +587,78 @@ class CapaExplorerDataModel(QtCore.QAbstractItemModel):
                     continue
                 model_index.internalPointer().info = util.get_name(model_index.internalPointer().location)
                 self.dataChanged.emit(model_index, model_index)
+    
+    def auto_rename_functions(self):
+        """Does best effort renaming of functions based on capa matches. 
+        Will trigger analysis of undefined functions which have capabilites.
+        Non generic names are kept as prefix to the new function name. 
+
+        Called from menu action.
+        """
+
+        functions_summary = defaultdict(list)
+        # recursively iterate through rules
+        for idx in range(self.root_node.childCount()):
+            root_index = self.index(idx, 0, QtCore.QModelIndex())
+            for model_index in self.iterateChildrenIndexFromRootIndex(root_index, ignore_root=False):
+                 if not isinstance(model_index.internalPointer(), CapaExplorerFunctionItem):
+                    continue
+                 loc = model_index.internalPointer().location
+                 parent = model_index.internalPointer().pred
+                 cleaned_info = re.sub(r'.\(\d+ matches\)','',parent.info).replace(' ', '_')
+
+                 functions_summary[loc].append(cleaned_info)
         
+        func_name_count = defaultdict(lambda:0)
+
+        for loc, capabilities in functions_summary.items():
+            namestr = '_AND_'.join(set(capabilities))
+            try:
+                
+                numbered_namestr = '{}_{}'.format(namestr, func_name_count[namestr])
+                util.smart_rename_function(loc, numbered_namestr)
+                func_name_count[namestr] +=1
+        
+            except Exception as e:
+                util.log(str(e))
+
+        # Emit signal and refresh cutter
+        util.trigger_function_renamed(loc, namestr)
+        util.trigger_refresh()
+
+        util.log('Renamed %d functions' % len(functions_summary))
+    
+    def create_flags(self):
+        """Creates flags and flagspaces based on cutter matches.
+
+        Called from menu action.
+        """
+        flags_summary = defaultdict(list)
+
+        for idx in range(self.root_node.childCount()):
+            root_index = self.index(idx, 0, QtCore.QModelIndex())
+            for model_index in self.iterateChildrenIndexFromRootIndex(root_index, ignore_root=False):
+                if not isinstance(model_index.internalPointer(), CapaExplorerFunctionItem):
+                    # Maybe include basic blocks as well?
+                    continue
+            
+                item = model_index.internalPointer()
+                parent = item.pred
+                flagspace,_,_ = parent.details.partition('/')
+                flag = util.r2_rule_name(parent.info)
+                flags_summary[flagspace].append((flag, item.location))
+
+        flagcount = defaultdict(lambda:0)
+
+        for fs, tup in flags_summary.items():
+            util.create_flagspace(fs)
+            for t in tup:
+                flag_with_count = f"{t[0]}_{flagcount[t[0]]}"
+                util.create_flag(f"{fs}.{flag_with_count}", t[1])
+                flagcount[t[0]]+=1
+
+        # Reset flagspace and refresh
+        util.create_flagspace("*")
+        util.trigger_flags_changed()
+
+

@@ -3,6 +3,8 @@ import json
 import cutter
 import itertools
 import CutterBindings
+from operator import itemgetter, attrgetter
+import re
 
 def log(msg):
     """log to cutter console
@@ -11,6 +13,14 @@ def log(msg):
     """
     cutter.message(f"[capa explorer]: {msg}")
 
+def trigger_flags_changed():
+    cutter.core().triggerFlagsChanged()
+
+def trigger_function_renamed(rva, new_name):
+    cutter.core().triggerFunctionRenamed(rva, new_name)
+
+def trigger_refresh():
+    cutter.refresh()
 
 def get_config_color(conf_name):
     return CutterBindings.Configuration.instance().getColor(conf_name)
@@ -27,19 +37,40 @@ def rename_function(location, new_name):
     except Exception as e:
         log(str(e))
 
-def analyze_and_rename_function(location, name):
-    cutter.cmd('af @ %s' % str(hex(location)))
-    old_name = cutter.cmdj('afij @%s' % location)[0]['name']
-    if ('fcn.' in old_name):
-        rename_function(location, name)
-    else: 
-        rename_function(location, f'{old_name}_AND_{name}')
+def smart_rename_function(location, name):
     
+    # Get function info
+    function_info = cutter.cmdj('afij @%s' % location)
+
+    if not len(function_info):
+        # no function at location, trigger analysis
+        # and refetch function info
+        cutter.cmd('af @ %s' % location)
+        function_info = cutter.cmdj('afij @%s' % location)
+    
+    old_fn_name = function_info[0]['name']
+
+    # Sometimes the vivisect feature extractor identifies
+    # adresses in the middle of functions as function starts
+    # for some reason. We get the actual addr with r2. 
+    actual_offset = function_info[0]['offset']
+    
+    if old_fn_name.startswith('fcn.'):
+        # Function has default name, replace all of it.
+        cutter.cmd('afn {} @ {}'.format(name, actual_offset))
+    else: 
+        # Function does not have generic name keep old name as prefix
+        name = f'{old_fn_name}__{name}'
+        cutter.cmd('afn {} @ {}'.format(name, actual_offset))
+
 def create_flagspace(flagspace):
     cutter.cmd('fs %s' % flagspace)
 
 def create_flag(name, location):
-    cutter.cmd('f+%s @ %s' % (name, location))
+    try:
+        cutter.cmd('f %s @ %s' % (name, location))
+    except Exception as e:
+        log(str(e))
 
 def highlight_locations(locations):
     cutter.cmd('ecHi red @@=%s' % ' '.join([str(x) for x in locations])) 
@@ -47,14 +78,6 @@ def highlight_locations(locations):
 
 def unhighlight_locations(locations):
     cutter.cmd('ecH- @@=%s' % ' '.join([str(x) for x in locations]))
-    cutter.refresh()
-
-def highlight_instruction(location):
-    cutter.cmd('ecHi red @@=%s' % location)   
-    cutter.refresh()
-
-def unhighlight_instruction(location):
-    cutter.cmd('ecH- @@=%s' % location)
     cutter.refresh()
 
 def seek(location):
@@ -92,7 +115,8 @@ def get_disasm(location):
         disasm = 'N/A'
     return disasm
 
-from operator import itemgetter, attrgetter
+def r2_rule_name(rule_info):
+    return re.sub(r'.\(\d+ matches\)','', rule_info).replace(' ', '_')
 
 def capability_rules(doc):
     """enumerate the rules in (namespace, name) order that are 'capability' rules (not lib/subscope/disposition/etc)."""
