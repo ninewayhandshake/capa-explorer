@@ -16,6 +16,8 @@ The goal of this is to port the functionality of the [capa IDA plugin](https://g
 - Right-click a function match to rename it; the new function name is propagated to Cutter
 - Right-click to copy a result by column or by row
 - Sort results by column
+- Create flags and flagspaces from the loaded matches
+- Automatically rename functions with capa matches based on the detected capabilities
 
 ![](img/plugin_interface_example_1.png)
 
@@ -38,7 +40,7 @@ Issue the following command to create a JSON report of the binary.
 
 `capa.exe -j sample.exe > sample.exe.json`
 
-Open the binary in Cutter and and press "Load capa JSON" button in the capa explorer widget to load the report.
+Open the binary in Cutter and and select "Load JSON file" in the drop down menu in the top right corner of the capa explorer widget to load the report.
 
 ## Known limitations
 - The plugin currently uses r2's ecH command to highlight instructions, while this works the support seems limited in Cutter and at times it can be slow. Ideally BIHighlighter should be used but due to a bug this is currently not exposed in CutterCore. https://github.com/radareorg/cutter/issues/2395
@@ -51,6 +53,6 @@ Open the binary in Cutter and and press "Load capa JSON" button in the capa expl
 If you encounter bugs or have suggestions which are not among the known limitations please create an issue, or even better, a pull request.
 
 ## Credits
-I want to thank FireEye and the FLARE team for creating capa and making it availible to everyone. Most of the code in this repo is taken directly from the official capa IDA plugin and and have received slight modifications to make it work in Cutter. The main goal was to make the user experice as close as possible to the original plugin.
+I want to thank FireEye and the FLARE team for creating capa and making it available to everyone. Most of the code in this repo is taken directly from the official capa IDA plugin and and have received slight modifications to make it work in Cutter. The main goal was to make the user experice as close as possible to the original plugin.
 
 https://github.com/fireeye/capa
