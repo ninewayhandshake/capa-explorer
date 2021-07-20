@@ -5,17 +5,15 @@ import re
 from .item import (
     CapaExplorerDataItem,
     CapaExplorerRuleItem,
-    CapaExplorerFunctionItem,
     CapaExplorerBlockItem,
-    CapaExplorerSubscopeItem,
     CapaExplorerDefaultItem,
     CapaExplorerFeatureItem,
     CapaExplorerByteViewItem,
-    CapaExplorerInstructionViewItem,
+    CapaExplorerFunctionItem,
+    CapaExplorerSubscopeItem,
+    CapaExplorerRuleMatchItem,
     CapaExplorerStringViewItem,
-    CapaExplorerRuleMatchItem
-    
-
+    CapaExplorerInstructionViewItem,
 )
 from . import util, capa_constants
 
@@ -509,7 +507,16 @@ class CapaExplorerDataModel(QtCore.QAbstractItemModel):
             )
 
         if feature["type"] == "regex":
-            return CapaExplorerStringViewItem(parent, display, location, feature["match"])
+            if feature.get("match"):
+                return CapaExplorerStringViewItem(parent, display, location, feature["match"])
+            for s, locations in feature["matches"].items():
+                if location in locations:
+                    return CapaExplorerStringViewItem(
+                        parent, display, location, '"' + util.escape_string(s) + '"'
+                    )
+
+            # programming error: the given location should always be found in the regex matches
+            raise ValueError("regex match at location not found")
 
         if feature["type"] == "basicblock":
             return CapaExplorerBlockItem(parent, location)

@@ -138,3 +138,17 @@ def capability_rules(doc):
             continue
 
         yield rule
+
+
+def escape_string(s: str) -> str:
+    """escape special characters"""
+    s = repr(s)
+    if not s.startswith(('"', "'")):
+        # u'hello\r\nworld' -> hello\\r\\nworld
+        s = s[2:-1]
+    else:
+        # 'hello\r\nworld' -> hello\\r\\nworld
+        s = s[1:-1]
+    s = s.replace("\\'", "'")  # repr() may escape "'" in some edge cases, remove
+    s = s.replace('"', '\\"')  # repr() does not escape '"', add
+    return s

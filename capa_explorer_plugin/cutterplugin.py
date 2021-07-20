@@ -185,14 +185,24 @@ class MyDockWidget(cutter.CutterDockWidget):
                 continue
 
             for attack in rule["meta"]["att&ck"]:
+                if isinstance(attack,dict):
+                    tactic = attack.get("tactic")
+                    technique = attack.get("technique")
+                    subtechnique = attack.get("subtechnique")
+                    id = attack.get("id")
+                    if subtechnique=="":
+                        tactics[tactic].add((technique, id))
+                    else:
+                        tactics[tactic].add((technique, subtechnique, id))
+                    continue
                 tactic, _, rest = attack.partition("::")
-            if "::" in rest:
-                technique, _, rest = rest.partition("::")
-                subtechnique, _, id = rest.rpartition(" ")
-                tactics[tactic].add((technique, subtechnique, id))
-            else:
-                technique, _, id = rest.rpartition(" ")
-                tactics[tactic].add((technique, id))
+                if "::" in rest:
+                    technique, _, rest = rest.partition("::")
+                    subtechnique, _, id = rest.rpartition(" ")
+                    tactics[tactic].add((technique, subtechnique, id))
+                else:
+                    technique, _, id = rest.rpartition(" ")
+                    tactics[tactic].add((technique, id))
         
         column_one = []
         column_two = []
