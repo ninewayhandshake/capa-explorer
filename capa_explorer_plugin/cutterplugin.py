@@ -359,7 +359,7 @@ class MyDockWidget(cutter.CutterDockWidget):
 class CAPAExplorerPlugin(cutter.CutterPlugin):
     name = "Capa explorer"
     description = "Lets you import and explore capa results in Cutter."
-    version = "1.1"
+    version = "1.2"
     author = "@9wayhandshake"
     license = "Apache License 2.0"
 
