@@ -2,7 +2,7 @@
 
 Capa explorer for Cutter.
 
-The goal of this is to port the functionality of the [capa IDA plugin](https://github.com/fireeye/capa/tree/master/capa/ida/plugin) to Cutter. 
+The goal of this is to port the functionality of the [capa IDA plugin](https://github.com/mandiant/capa/tree/master/capa/ida/plugin) to Cutter. 
 
 ## Features
 
@@ -34,7 +34,7 @@ Inside that directory you should find a directory named python. Download or clon
 
 Use capa standalone which can be downloaded here
 
-https://github.com/fireeye/capa/releases/
+https://github.com/mandiant/capa/releases
 
 Issue the following command to create a JSON report of the binary.
 
@@ -53,6 +53,6 @@ Open the binary in Cutter and and select "Load JSON file" in the drop down menu 
 If you encounter bugs or have suggestions which are not among the known limitations please create an issue, or even better, a pull request.
 
 ## Credits
-I want to thank FireEye and the FLARE team for creating capa and making it available to everyone. Most of the code in this repo is taken directly from the official capa IDA plugin and and have received slight modifications to make it work in Cutter. The main goal was to make the user experice as close as possible to the original plugin.
+I want to thank Mandiant and the FLARE team for creating capa and making it available to everyone. Most of the code in this repo is taken directly from the official capa IDA plugin and and have received slight modifications to make it work in Cutter. The main goal was to make the user experice as close as possible to the original plugin.
 
-https://github.com/fireeye/capa
+https://github.com/mandiant/capa
