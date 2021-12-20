@@ -543,8 +543,11 @@ class CapaExplorerDataModel(QtCore.QAbstractItemModel):
             # display string preview
             return CapaExplorerStringViewItem(parent, display, location, feature[feature["type"]])
 
-        if feature["type"] in ("import", "export"):
+        if feature["type"] in ("import", "export", "function-name"):
             # display no preview
+            return CapaExplorerFeatureItem(parent, location=location, display=display)
+
+        if feature["type"] in ("arch", "os", "format"):
             return CapaExplorerFeatureItem(parent, display=display)
 
         raise RuntimeError("unexpected feature type: " + str(feature["type"]))
